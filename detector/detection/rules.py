@@ -91,7 +91,8 @@ def check_event(event):
     # ── RULE-02: Shadow/gshadow file modified by unexpected process
     if (syscall in ('openat', 'chmod')
             and path in CREDENTIAL_FILES
-            and comm not in SAFE_SHADOW):
+            and comm not in SAFE_SHADOW
+            and (flags & 3) in (1, 2)):
         alerts.append({
             'rule_id': 'RULE-02', 'rule_name': 'Shadow File Tampered',
             'severity': 'CRITICAL',
