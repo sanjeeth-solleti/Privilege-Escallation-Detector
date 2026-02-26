@@ -26,7 +26,7 @@ GTFOBINS         = {
 }
 
 # Processes that legitimately touch sensitive files
-SAFE_SHADOW   = {'passwd','chpasswd','chage','useradd','usermod','shadow','unix_chkpwd'}
+SAFE_SHADOW = {'passwd','chpasswd','chage','useradd','usermod','shadow','unix_chkpwd','sudo','su'}
 SAFE_SSH      = {'sshd','ssh-keygen','ssh-keyscan'}
 SAFE_DOCKER   = {'dockerd','containerd','docker','dockerd-current'}
 SAFE_SUDOERS  = {'visudo','dpkg','apt','apt-get','ansible','sudo'}
