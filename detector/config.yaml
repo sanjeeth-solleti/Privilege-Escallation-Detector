@@ -1,0 +1,165 @@
+# Privilege Escalation Detector Configuration (STRICT / ZERO-FP)
+
+app:
+  name: "Privilege Escalation Detector"
+  version: "1.0.0"
+  environment: "production"
+  debug: false
+
+ebpf:
+  enabled: true
+  buffer_size: 256
+  sample_rate: 1
+  monitored_syscalls:
+    - setuid
+    - setreuid
+    - setresuid
+    - seteuid
+    - execve
+    - capset
+    - openat
+    - chmod
+
+detection:
+  enabled: true
+  rules_enabled: true
+
+  rules_config:
+    - rule_id: "RULE-01"
+      name: "Direct UID to Root"
+      severity: "CRITICAL"
+      enabled: true
+
+    - rule_id: "RULE-02"
+      name: "Credential File Tampering"
+      severity: "CRITICAL"
+      enabled: true
+
+    - rule_id: "RULE-03"
+      name: "Root SSH Key Injection"
+      severity: "CRITICAL"
+      enabled: true
+
+    - rule_id: "RULE-04"
+      name: "Process Memory Injection"
+      severity: "CRITICAL"
+      enabled: true
+
+    - rule_id: "RULE-05"
+      name: "Kernel Module Abuse"
+      severity: "CRITICAL"
+      enabled: true
+
+    - rule_id: "RULE-06"
+      name: "Docker Socket Abuse"
+      severity: "CRITICAL"
+      enabled: true
+
+    - rule_id: "RULE-07"
+      name: "SUID Binary from Writable Path"
+      severity: "CRITICAL"
+      enabled: true
+
+    - rule_id: "RULE-08"
+      name: "Capability Abuse"
+      severity: "CRITICAL"
+      enabled: true
+
+    - rule_id: "RULE-09"
+      name: "Sudoers Tampering"
+      severity: "CRITICAL"
+      enabled: true
+
+    - rule_id: "RULE-10"
+      name: "Confirmed Privilege Escalation"
+      severity: "CRITICAL"
+      enabled: true
+
+  anomaly_enabled: false
+
+database:
+  type: "sqlite"
+  path: "data/database/detector.db"
+  pool_size: 10
+  max_overflow: 20
+  echo: false
+  retention_days: 30
+  cleanup_interval: 86400
+
+dashboard:
+  enabled: false
+
+forwarder:
+  enabled: true
+  config_file: "forwarder/forwarder.config.json"
+  poll_interval: 30
+  batch_size: 50
+  retry_attempts: 3
+  retry_delay: 5
+
+logging:
+  level: "INFO"
+  file_enabled: true
+  file_path: "logs/detector.log"
+  file_max_bytes: 10485760
+  file_backup_count: 5
+  console_enabled: true
+  console_colorize: true
+  format: "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+alerts:
+  aggregation_enabled: true
+  aggregation_window: 60
+
+  rate_limit:
+    enabled: true
+    max_alerts_per_minute: 20
+
+  auto_response:
+    enabled: false
+
+  notifications:
+    email_enabled: false
+    sms_enabled: false
+    slack_enabled: false
+    syslog_enabled: false
+
+performance:
+  max_events_per_second: 10000
+  queue_size: 1000
+  worker_threads: 4
+  max_memory_mb: 512
+  max_cpu_percent: 10
+
+whitelist:
+  enabled: true
+  processes:
+    - "systemd"
+    - "systemd-journald"
+    - "systemd-logind"
+    - "systemd-udevd"
+    - "sshd"
+    - "cron"
+    - "dpkg"
+    - "apt"
+    - "apt-get"
+  users:
+    - "root"
+
+sensitive_paths:
+  - "/etc/shadow"
+  - "/etc/gshadow"
+  - "/etc/passwd"
+  - "/etc/sudoers"
+  - "/root/.ssh/"
+
+suspicious_paths:
+  - "/tmp/"
+  - "/dev/shm/"
+  - "/var/tmp/"
+
+testing:
+  enabled: false
+  simulate_attacks: false
+  verbose_logging: false

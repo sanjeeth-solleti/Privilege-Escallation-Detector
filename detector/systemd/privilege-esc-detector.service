@@ -1,0 +1,20 @@
+[Unit]
+Description=Privilege Escalation Detector
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/privilege-escalation-detector
+ExecStart=/usr/bin/python3 /opt/privilege-escalation-detector/main.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=privilege-esc-detector
+LimitMEMLOCK=infinity
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

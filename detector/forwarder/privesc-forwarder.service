@@ -1,0 +1,18 @@
+[Unit]
+Description=PrivEsc Detector Cloud Forwarder
+After=network.target privilege-esc-detector.service
+Requires=privilege-esc-detector.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/privilege-escalation-detector
+ExecStart=/usr/bin/python3 /opt/privilege-escalation-detector/forwarder/forwarder.py
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=privesc-forwarder
+
+[Install]
+WantedBy=multi-user.target
