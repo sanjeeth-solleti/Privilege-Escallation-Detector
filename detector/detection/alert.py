@@ -7,7 +7,7 @@ import time
 import hashlib
 import logging
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 
 from database.operations import DatabaseOperations
 
@@ -76,7 +76,7 @@ class AlertManager:
         # Deterministic alert_id — same attack within 10min = same id
         dedup_str = f"{alert_obj.rule_id}:{alert_obj.uid}:{alert_obj.filename}:{int(now // 600)}"
         alert_id  = hashlib.md5(dedup_str.encode()).hexdigest()
-        now_str   = datetime.utcnow().isoformat()
+        now_str = datetime.now().isoformat()
 
         record = {
             'alert_id':     alert_id,
