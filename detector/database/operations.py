@@ -8,13 +8,13 @@ from pathlib import Path
 
 logger = logging.getLogger('detector.database')
 
-_DB_PATH = '/opt/detector/data/database/detector.db'
+_DB_PATH = '/opt/privilege-escalation-detector/data/database/detector.db'
 _local   = threading.local()
 
 
 def _init(path='data/database/detector.db'):
     global _DB_PATH
-    _DB_PATH = path
+    _DB_PATH = '/opt/privilege-escalation-detector/data/database/detector.db'
 
 
 def _conn():
