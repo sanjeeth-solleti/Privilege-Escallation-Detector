@@ -214,7 +214,7 @@ def run():
                 log.info(f'Forwarding {len(alerts)} alerts (rowid > {last_id})')
                 inserted = post_alerts(cfg, alerts)
                 if inserted >= 0:
-                    last_id = alerts[-1]['rowid']
+                    last_id = alerts[-1].get('rowid', alerts[-1].get('id', last_id))
                     cfg['last_synced_id'] = last_id
                     cfg['last_sync_time'] = datetime.now().isoformat()
                     save_config(cfg)
