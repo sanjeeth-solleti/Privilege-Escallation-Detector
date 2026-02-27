@@ -4,6 +4,7 @@ Alert manager — deduplication, rate limiting, persistence
 
 import uuid
 import time
+import hashlib
 import logging
 from collections import deque
 from datetime import datetime
@@ -21,8 +22,6 @@ class AlertManager:
         self._callbacks    = []
         self.generated     = 0
         self.dropped       = 0
-
-        # Deduplication cache
         self._dedup_cache  = {}
         self._dedup_window = 600  # 10 minutes
 
@@ -30,7 +29,6 @@ class AlertManager:
         self._callbacks.append(fn)
 
     def process(self, alert_obj):
-        # Normalize dict → object
         if isinstance(alert_obj, dict):
             class _A: pass
             a = _A()
@@ -52,50 +50,33 @@ class AlertManager:
 
         now = time.time()
 
-        # ─────────────────────────────────────────────
-        # DEDUPLICATION LOGIC (UPDATED AS REQUESTED)
-        # ─────────────────────────────────────────────
-        if alert_obj.rule_id == 'RULE-01':  # UID → root
+        # Smart dedup key
+        if alert_obj.rule_id in ('RULE-01', 'RULE-08'):
             dedup_key = (alert_obj.rule_id, alert_obj.uid)
-
-        elif alert_obj.rule_id == 'RULE-05':  # Kernel module abuse
+        elif alert_obj.rule_id == 'RULE-05':
             dedup_key = (alert_obj.rule_id, alert_obj.uid, alert_obj.comm)
-
-        elif alert_obj.rule_id == 'RULE-07':  # SUID exec
-            dedup_key = (alert_obj.rule_id, alert_obj.uid, alert_obj.filename)
-
-        elif alert_obj.rule_id == 'RULE-08':  # Capability abuse
-            dedup_key = (alert_obj.rule_id, alert_obj.uid)
-
         else:
             dedup_key = (alert_obj.rule_id, alert_obj.uid, alert_obj.filename)
 
-        # Dedup window check
         if dedup_key in self._dedup_cache:
-            last_seen = self._dedup_cache[dedup_key]
-            if now - last_seen < self._dedup_window:
+            if now - self._dedup_cache[dedup_key] < self._dedup_window:
                 self.dropped += 1
                 return False
 
         self._dedup_cache[dedup_key] = now
 
-        # Cleanup old dedup entries
         if len(self._dedup_cache) > 500:
             cutoff = now - self._dedup_window
-            self._dedup_cache = {
-                k: v for k, v in self._dedup_cache.items()
-                if v > cutoff
-            }
+            self._dedup_cache = {k: v for k, v in self._dedup_cache.items() if v > cutoff}
 
-        # ─────────────────────────────────────────────
-        # RATE LIMIT
-        # ─────────────────────────────────────────────
         if not self._rate_ok():
             self.dropped += 1
             return False
 
-        alert_id = str(uuid.uuid4())
-        now_str  = datetime.utcnow().isoformat()
+        # Deterministic alert_id — same attack within 10min = same id
+        dedup_str = f"{alert_obj.rule_id}:{alert_obj.uid}:{alert_obj.filename}:{int(now // 600)}"
+        alert_id  = hashlib.md5(dedup_str.encode()).hexdigest()
+        now_str   = datetime.utcnow().isoformat()
 
         record = {
             'alert_id':     alert_id,
@@ -117,18 +98,14 @@ class AlertManager:
             'acknowledged': False,
         }
 
-        # Persist alert
         try:
             DatabaseOperations.save_alert(record)
         except Exception as e:
             logger.error(f"Failed to save alert: {e}")
 
         self.generated += 1
-        logger.warning(
-            f"[{alert_obj.severity}] {alert_obj.rule_id}: {alert_obj.description}"
-        )
+        logger.warning(f"[{alert_obj.severity}] {alert_obj.rule_id}: {alert_obj.description}")
 
-        # Dispatch callbacks
         for cb in self._callbacks:
             try:
                 cb(record)
