@@ -29,6 +29,7 @@ struct event_t {
     u32  gid;
     u32  new_uid;
     u32  new_gid;
+    u32  open_flags;
     u64  timestamp;
     u32  event_type;
     char comm[TASK_COMM_LEN];
@@ -141,6 +142,7 @@ TRACEPOINT_PROBE(syscalls, sys_enter_openat) {
     __builtin_memset(e, 0, sizeof(*e));
     fill_common(e);
     e->event_type = EVENT_OPENAT;
+    e->open_flags = (u32)args->flags;
     bpf_probe_read_user_str(&e->filename, sizeof(e->filename), args->filename);
     __builtin_memcpy(e->syscall_name, "openat", 7);
     events.ringbuf_submit(e, 0);
