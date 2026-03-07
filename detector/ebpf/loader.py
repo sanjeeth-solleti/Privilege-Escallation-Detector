@@ -32,7 +32,6 @@ class SyscallEvent(ctypes.Structure):
         ('open_flags',   ctypes.c_uint32),
         ('timestamp',    ctypes.c_uint64),
         ('event_type',   ctypes.c_uint32),
-        ('_pad',         ctypes.c_uint32),
         ('comm',         ctypes.c_char * 16),
         ('parent_comm',  ctypes.c_char * 16),
         ('filename',     ctypes.c_char * 256),
